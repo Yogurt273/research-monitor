@@ -1,35 +1,28 @@
-import re, json, pandas as pd, time, sys
+import json
+import feedparser             # pip install feedparser
+import pandas as pd
 from pathlib import Path
-from playwright.sync_api import sync_playwright
 
-URL = "https://seed.bytedance.com/zh/public_papers?view_from=research"
+# 输出目录
 OUT = Path("data"); OUT.mkdir(exist_ok=True)
 
-CARD = "div.paper-card"          # 实测可用；若之后改版再调
+# arXiv API：查询 cs.AI （人工智能）分类，最新 200 篇
+API_URL = (
+    "http://export.arxiv.org/api/query?"
+    "search_query=cat:cs.AI&"
+    "start=0&max_results=200&"
+    "sortBy=submittedDate&sortOrder=descending"
+)
 
 def crawl():
+    feed = feedparser.parse(API_URL)
     rows = []
-    with sync_playwright() as p:
-        page = p.chromium.launch(headless=True).new_page()
-        page.goto(URL, wait_until="networkidle")
-        page.wait_for_selector(CARD, timeout=15000)
-
-        # 懒加载：多滚几屏
-        for _ in range(4):
-            page.mouse.wheel(0, 5000)
-            time.sleep(0.8)
-
-        for c in page.query_selector_all(CARD):
-            txt = c.inner_text().strip()          # 整段文字
-            m = re.search(r"\d{4}-\d{2}-\d{2}", txt)
-            if not m:
-                print("⚠️  no date, skip"); continue
-            date = m.group(0)
-            rest = txt.replace(date, "").strip()
-            title = rest.split("\n",1)[0]         # 第一行即标题
-            link  = c.query_selector("a").get_attribute("href")
-            rows.append({"date": date, "title": title, "link": link})
-    print("✅  captured", len(rows), "rows")
+    for e in feed.entries:
+        date = e.published[:10]         # 取 YYYY-MM-DD
+        title = e.title.strip().replace("\n"," ")
+        link  = e.link
+        rows.append({"date": date, "title": title, "link": link})
+    print(f"✅  fetched {len(rows)} entries")
     return rows
 
 def to_monthly(rows):
@@ -39,7 +32,11 @@ def to_monthly(rows):
 
 if __name__ == "__main__":
     papers = crawl()
-    if not papers:
-        sys.exit("❌  crawl got 0 rows – selector/anti-bot?")
-    Path("data/papers_raw.json").write_text(json.dumps(papers, ensure_ascii=False, indent=2))
-    Path("data/monthly_counts.json").write_text(json.dumps(to_monthly(papers), indent=2))
+    # 写入文件
+    Path("data/papers_raw.json").write_text(
+        json.dumps(papers, ensure_ascii=False, indent=2)
+    )
+    Path("data/monthly_counts.json").write_text(
+        json.dumps(to_monthly(papers), indent=2)
+    )
+    print("🎉  done")

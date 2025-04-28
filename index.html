@@ -1,0 +1,21 @@
+<!doctype html><html lang="zh"><head>
+<meta charset="utf-8"><title>字节公开论文月度趋势</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>body{font-family:system-ui;margin:2rem auto;max-width:760px}canvas{max-width:100%}</style>
+</head><body>
+<h2>字节跳动公开论文发布趋势</h2>
+<canvas id="chart"></canvas>
+<script>
+(async()=>{
+  const res=await fetch('data/monthly_counts.json');
+  const data=await res.json();
+  const labels=Object.keys(data).sort();
+  const values=labels.map(k=>data[k]);
+  new Chart(document.getElementById('chart'),{
+    type:'line',
+    data:{labels,datasets:[{label:'论文数',data:values,tension:.3,fill:false}]},
+    options:{scales:{y:{beginAtZero:true}}}
+  });
+})();
+</script>
+</body></html>

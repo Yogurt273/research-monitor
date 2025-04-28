@@ -1,21 +1,38 @@
-<!doctype html><html lang="zh"><head>
-<meta charset="utf-8"><title>字节公开论文月度趋势</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<style>body{font-family:system-ui;margin:2rem auto;max-width:760px}canvas{max-width:100%}</style>
-</head><body>
-<h2>字节跳动公开论文发布趋势</h2>
-<canvas id="chart"></canvas>
-<script>
-(async()=>{
-  const res=await fetch('data/monthly_counts.json');
-  const data=await res.json();
-  const labels=Object.keys(data).sort();
-  const values=labels.map(k=>data[k]);
-  new Chart(document.getElementById('chart'),{
-    type:'line',
-    data:{labels,datasets:[{label:'论文数',data:values,tension:.3,fill:false}]},
-    options:{scales:{y:{beginAtZero:true}}}
-  });
-})();
-</script>
-</body></html>
+<!doctype html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8">
+  <title>arXiv AI 论文月度统计</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { max-width: 720px; margin: auto; font-family: system-ui; padding: 2rem; }
+    canvas { width: 100%; height: 300px; }
+  </style>
+</head>
+<body>
+  <h2>arXiv cs.AI 分类论文发布趋势</h2>
+  <canvas id="chart"></canvas>
+  <script>
+    async function draw() {
+      const res = await fetch('data/monthly_counts.json');
+      const data = await res.json();
+      const labels = Object.keys(data).sort();
+      const values = labels.map(m=>data[m]);
+      new Chart(document.getElementById('chart'), {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            label: '论文数',
+            data: values,
+            tension: .3,
+            fill: false
+          }]
+        },
+        options: { scales: { y: { beginAtZero: true } } }
+      });
+    }
+    draw();
+  </script>
+</body>
+</html>
